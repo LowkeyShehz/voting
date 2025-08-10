@@ -20,7 +20,10 @@ const dbConfig = {
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'voting_user',
     password: process.env.DB_PASSWORD || '1234',
-    database: process.env.DB_NAME || 'voting_system'
+    database: process.env.DB_NAME || 'voting_system',
+    ssl: {
+        rejectUnauthorized: true
+    }
 };
 
 // Database connection pool
