@@ -131,18 +131,18 @@ app.post('/api/login', async (req, res) => {
     try {
         const { voterId, password } = req.body;
         
-        const voter = await new Promise((resolve, reject) => {
+        const voterData = await new Promise((resolve, reject) => {
             db.get('SELECT * FROM voters WHERE id = ?', [voterId], (err, row) => {
                 if (err) reject(err); else resolve(row);
             });
         });
         
-        if (!voter) {
+        if (!voterData) { // Changed from !voter to !voterData
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const voter = rows[0];
-        const isValidPassword = await bcrypt.compare(password, voter.password);
+        // const voter = rows[0]; // This line is removed
+        const isValidPassword = await bcrypt.compare(password, voterData.password); // Changed from voter.password to voterData.password
         
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -151,9 +151,9 @@ app.post('/api/login', async (req, res) => {
         res.json({
             success: true,
             voter: {
-                id: voter.id,
-                name: voter.name,
-                hasVoted: voter.has_voted
+                id: voterData.id, // Changed from voter.id to voterData.id
+                name: voterData.name, // Changed from voter.name to voterData.name
+                hasVoted: voterData.has_voted // Changed from voter.has_voted to voterData.has_voted
             }
         });
     } catch (error) {
@@ -167,7 +167,7 @@ app.post('/api/admin/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         
-        const admin = await new Promise((resolve, reject) => {
+        const adminData = await new Promise((resolve, reject) => {
             db.get('SELECT * FROM admins WHERE username = ?', [username], (err, row) => {
                 if (err) reject(err); else resolve(row);
             });
