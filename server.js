@@ -173,18 +173,18 @@ app.post('/api/admin/login', async (req, res) => {
             });
         });
         
-        if (!admin) {
+        if (!adminData) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const admin = rows[0];
-        const isValidPassword = await bcrypt.compare(password, admin.password);
+
+        const isValidPassword = await bcrypt.compare(password, adminData.password);
         
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        res.json({ success: true, admin: { username: admin.username } });
+        res.json({ success: true, admin: { username: adminData.username } });
     } catch (error) {
         console.error('Admin login error:', error);
         res.status(500).json({ error: 'Server error' });
