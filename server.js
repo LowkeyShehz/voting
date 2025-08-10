@@ -79,28 +79,22 @@ async function initializeDatabase() {
             VALUES ('admin', ?)
         `, [hashedAdminPassword]);
         
-        // Insert sample voters if table is empty
-        const [votersCount] = await connection.execute('SELECT COUNT(*) as count FROM voters');
-        if (votersCount[0].count === 0) {
-            const hashedPassword = await bcrypt.hash('password123', 10);
-            await connection.execute(`
-                INSERT INTO voters (id, name, password) VALUES 
-                ('V001', 'John Doe', ?),
-                ('V002', 'Jane Smith', ?),
-                ('V003', 'Bob Johnson', ?)
-            `, [hashedPassword, hashedPassword, hashedPassword]);
-        }
+        // Insert sample voters if not exists
+        const hashedPassword = await bcrypt.hash('password123', 10);
+        await connection.execute(`
+            INSERT IGNORE INTO voters (id, name, password) VALUES 
+            ('V001', 'John Doe', ?),
+            ('V002', 'Jane Smith', ?),
+            ('V003', 'Bob Johnson', ?)
+        `, [hashedPassword, hashedPassword, hashedPassword]);
         
-        // Insert sample candidates if table is empty
-        const [candidatesCount] = await connection.execute('SELECT COUNT(*) as count FROM candidates');
-        if (candidatesCount[0].count === 0) {
-            await connection.execute(`
-                INSERT INTO candidates (name, party) VALUES 
-                ('Alice Wilson', 'Democratic Party'),
-                ('Robert Brown', 'Republican Party'),
-                ('Carol Davis', 'Independent')
-            `);
-        }
+        // Insert sample candidates if not exists
+        await connection.execute(`
+            INSERT IGNORE INTO candidates (name, party) VALUES 
+            ('Alice Wilson', 'Democratic Party'),
+            ('Robert Brown', 'Republican Party'),
+            ('Carol Davis', 'Independent')
+        `);
         
         connection.release();
         console.log('Database initialized successfully');
