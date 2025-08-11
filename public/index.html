@@ -505,10 +505,11 @@
         <!-- Admin Section -->
         <div class="card" id="adminSection">
             <div class="tabs">
-                <div class="tab active" onclick="showManageVoters()">Manage Voters</div>
-                <div class="tab" onclick="showManageCandidates()">Manage Candidates</div>
-                <div class="tab" onclick="showAdminResults()">View Results</div>
-            </div>
+                    <div class="tab active" onclick="showManageVoters()">Manage Voters</div>
+                    <div class="tab" onclick="showManageCandidates()">Manage Candidates</div>
+                    <div class="tab" onclick="showAdminResults()">View Results</div>
+                    <div class="tab" onclick="showAdminSqlQuery()">SQL Query</div>
+                </div>
             
             <div id="adminMessage"></div>
             
@@ -559,6 +560,17 @@
             <div id="adminResults" style="display: none;">
                 <h3 style="margin-bottom: 20px;">Election Results</h3>
                 <div id="adminResultsContainer" class="loading">Loading results...</div>
+            </div>
+            
+            <div id="adminSqlQuery" style="display: none;">
+                <h3 style="margin-bottom: 20px;">Execute SQL Query</h3>
+                <div class="form-group">
+                    <label for="sql-query-input">SQL Query:</label>
+                    <textarea id="sql-query-input" rows="10" placeholder="Enter your SQL query here..."></textarea>
+                </div>
+                <button class="btn" onclick="executeSqlQuery()">Execute Query</button>
+                <div id="sql-query-results" class="results-container"></div>
+                <p id="sql-query-message" class="message"></p>
             </div>
             
             <div style="text-align: center; margin-top: 20px;">
@@ -904,6 +916,7 @@
             document.getElementById('manageVoters').style.display = 'block';
             document.getElementById('manageCandidates').style.display = 'none';
             document.getElementById('adminResults').style.display = 'none';
+            document.getElementById('adminSqlQuery').style.display = 'none'; // Hide new section
         }
 
         function showManageCandidates() {
@@ -912,6 +925,7 @@
             document.getElementById('manageVoters').style.display = 'none';
             document.getElementById('manageCandidates').style.display = 'block';
             document.getElementById('adminResults').style.display = 'none';
+            document.getElementById('adminSqlQuery').style.display = 'none'; // Hide new section
         }
 
         function showAdminResults() {
@@ -920,7 +934,99 @@
             document.getElementById('manageVoters').style.display = 'none';
             document.getElementById('manageCandidates').style.display = 'none';
             document.getElementById('adminResults').style.display = 'block';
+            document.getElementById('adminSqlQuery').style.display = 'none'; // Hide new section
             loadAdminResults();
+        }
+
+        function showAdminSqlQuery() {
+            document.querySelectorAll('#adminSection .tab').forEach(tab => tab.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('manageVoters').style.display = 'none';
+            document.getElementById('manageCandidates').style.display = 'none';
+            document.getElementById('adminResults').style.display = 'none';
+            document.getElementById('adminSqlQuery').style.display = 'block'; // Show new section
+        }
+
+        // Admin SQL Query Execution
+        async function executeSqlQuery() {
+            const query = document.getElementById('sql-query-input').value;
+            const resultsDiv = document.getElementById('sql-query-results');
+            const messageP = document.getElementById('sql-query-message');
+            resultsDiv.innerHTML = '';
+            messageP.textContent = '';
+
+            if (!query.trim()) {
+                messageP.textContent = 'Please enter a query.';
+                messageP.style.color = 'red';
+                return;
+            }
+
+            try {
+                const response = await apiCall('/api/admin/execute-query', { // Using apiCall helper
+                    method: 'POST',
+                    body: JSON.stringify({ query })
+                });
+                const data = response; // apiCall already parses JSON and handles !response.ok
+
+                if (data.success) {
+                    messageP.textContent = data.message || 'Query executed successfully.';
+                    messageP.style.color = 'green';
+                    if (data.results) {
+                        // Display results in a table or pre-formatted text
+                        if (data.results.length > 0) {
+                            const table = document.createElement('table');
+                            table.style.width = '100%';
+                            table.style.borderCollapse = 'collapse';
+                            table.style.marginTop = '10px';
+                            const thead = document.createElement('thead');
+                            const tbody = document.createElement('tbody');
+
+                            // Create header row
+                            const headerRow = document.createElement('tr');
+                            Object.keys(data.results[0]).forEach(key => {
+                                const th = document.createElement('th');
+                                th.textContent = key;
+                                th.style.border = '1px solid #ddd';
+                                th.style.padding = '8px';
+                                th.style.textAlign = 'left';
+                                th.style.backgroundColor = '#f2f2f2';
+                                headerRow.appendChild(th);
+                            });
+                            thead.appendChild(headerRow);
+                            table.appendChild(thead);
+
+                            // Create data rows
+                            data.results.forEach(row => {
+                                const tr = document.createElement('tr');
+                                Object.values(row).forEach(value => {
+                                    const td = document.createElement('td');
+                                    td.textContent = value;
+                                    td.style.border = '1px solid #ddd';
+                                    td.style.padding = '8px';
+                                    tr.appendChild(td);
+                                });
+                                tbody.appendChild(tr);
+                            });
+                            table.appendChild(tbody);
+                            resultsDiv.appendChild(table);
+                        } else {
+                            resultsDiv.textContent = 'No results found.';
+                        }
+                    } else if (data.details) {
+                        resultsDiv.textContent = `Changes: ${data.details.changes}, Last ID: ${data.details.lastID}`;
+                    }
+                } else {
+                    messageP.textContent = data.error || 'Error executing query.';
+                    messageP.style.color = 'red';
+                    if (data.details) {
+                        resultsDiv.textContent = `Details: ${data.details}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error executing SQL query:', error);
+                messageP.textContent = `An unexpected error occurred: ${error.message}`;
+                messageP.style.color = 'red';
+            }
         }
 
         // Add voter form
