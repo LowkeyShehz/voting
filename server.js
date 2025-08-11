@@ -293,7 +293,7 @@ app.post('/api/admin/voters', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         await new Promise((resolve, reject) => {
-            db.run('INSERT INTO voters (id, name, password) VALUES (?, ?, ?)', [voterId, name, hashedPassword], function(err) {
+            db.run('INSERT INTO voters (id, name, password) VALUES (?, ?, ?)', [id, name, hashedPassword], function(err) {
                 if (err) reject(err); else resolve();
             });
         });
